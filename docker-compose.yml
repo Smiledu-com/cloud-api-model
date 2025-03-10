@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  churn-prediction-api:
+    build: .
+    ports:
+      - "${API_PORT}:8000"
+    environment:
+      - PORT=${API_PORT}
+      - MODEL_PATH=school_churn_model.json
+      - COLUMNS_PATH=model_columns.json
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

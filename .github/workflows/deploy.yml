@@ -1,0 +1,58 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+env:
+  DEPLOYMENT_ENV: production
+  API_PORT: ${{ vars.API_PORT }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create env Main
+        id: CreateEnvMain
+        run: |
+          touch .env
+          echo API_PORT=${{env.API_PORT}} >> .env
+
+      - name: Prepare files for archiving
+        run: |
+          mkdir temp_deploy
+          rsync -av --exclude='temp_deploy' . temp_deploy/
+
+      - name: Archive files
+        run: |
+          tar -czf app.tar.gz -C temp_deploy .
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Ensure target directory exists on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} 'mkdir -p /home/ec2-user/cloud-project && chmod 755 /home/ec2-user/cloud-project'
+
+      - name: Clean target directory on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} 'sudo rm -rf /home/ec2-user/cloud-project/*'
+
+      - name: Copy tarball to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no app.tar.gz ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/cloud-project/app.tar.gz
+
+      - name: SSH into EC2 and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user/cloud-project
+            ls -l app.tar.gz
+            tar -xzf app.tar.gz
+            docker-compose down
+            docker-compose up -d --env-file .env --build -V
+          EOF
