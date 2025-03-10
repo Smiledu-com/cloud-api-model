@@ -6,7 +6,7 @@ services:
     ports:
       - "${API_PORT}:8000"
     environment:
-      - PORT=${API_PORT}
+      - PORT=8000
       - MODEL_PATH=school_churn_model.json
       - COLUMNS_PATH=model_columns.json
     volumes:
