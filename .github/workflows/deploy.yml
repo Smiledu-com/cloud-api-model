@@ -54,5 +54,5 @@ jobs:
             ls -l app.tar.gz
             tar -xzf app.tar.gz
             docker-compose down
-            docker-compose up -d --env-file .env --build -V
+            docker-compose --env-file .env up -d --build -V
           EOF
