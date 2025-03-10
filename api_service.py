@@ -295,5 +295,5 @@ async def identify_high_risk(batch: SchoolBatch, threshold: float = Query(0.3, d
 
 # Run the API server when the script is executed
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 3005))
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("api_service:app", host="0.0.0.0", port=port, reload=False)
