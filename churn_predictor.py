@@ -9,7 +9,7 @@ import xgboost as xgb
 import json
 
 class ChurnPredictor:
-    def __init__(self, model_path='school_churn_model.json', columns_path='model_columns.json'):
+    def __init__(self, model_path='xgb_native_model.json', columns_path='model_columns.json'):
         """Initialize the predictor with paths to the model and column list"""
         # Load the model
         self.model = xgb.XGBClassifier()

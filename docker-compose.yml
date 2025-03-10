@@ -7,7 +7,7 @@ services:
       - "${API_PORT}:8000"
     environment:
       - PORT=8000
-      - MODEL_PATH=school_churn_model.json
+      - MODEL_PATH=xgb_native_model.json
       - COLUMNS_PATH=model_columns.json
     volumes:
       - ./logs:/app/logs

@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the model and code
-COPY school_churn_model.json .
+COPY xgb_native_model.json .
 COPY model_columns.json .
 COPY churn_predictor.py .
 COPY api_service.py .

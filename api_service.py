@@ -20,7 +20,7 @@ app = FastAPI(
 )
 
 # Initialize the predictor
-model_path = os.environ.get("MODEL_PATH", "school_churn_model.json")
+model_path = os.environ.get("MODEL_PATH", "xgb_native_model.json")
 columns_path = os.environ.get("COLUMNS_PATH", "model_columns.json")
 predictor = ChurnPredictor(model_path=model_path, columns_path=columns_path)
 
