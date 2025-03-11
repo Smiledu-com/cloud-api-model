@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 from churn_predictor import ChurnPredictor
+import boto3
+import time
 
 # Initialize the FastAPI app
 app = FastAPI(
