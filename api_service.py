@@ -336,7 +336,7 @@ async def predict_batch(threshold: float = Query(0.3, description="Churn probabi
             predictions.append({
                 "school_id": int(row["school_id"]),
                 "school_name": row["school_name"],
-                "churn_probability": (1 - ((1 - float(row["churn_probability"])) ** power)) ,
+                "churn_probability": (1 - ((1 - float(row["churn_probability"])) ** 0.4)) ,
                 "predicted_churn": int(row["predicted_churn"]),
                 "high_risk": bool(row["churn_probability"] >= threshold)
             })
