@@ -33,6 +33,16 @@ model_path = os.environ.get("MODEL_PATH", "xgb_native_model.json")
 columns_path = os.environ.get("COLUMNS_PATH", "model_columns.json")
 predictor = ChurnPredictor(model_path=model_path, columns_path=columns_path)
 
+# AWS Athena configuration
+aws_region = os.environ.get("AWS_REGION", "us-east-1")
+athena_database = os.environ.get("ATHENA_DATABASE", "dbpredictchurn")
+athena_view = os.environ.get("ATHENA_VIEW", "school_activity_contract_view")
+athena_output_location = os.environ.get("ATHENA_OUTPUT_LOCATION", "s3://cloud-lake-smiledu/Unsaved/")
+
+# Initialize AWS clients
+athena_client = boto3.client('athena', region_name=aws_region)
+s3_client = boto3.client('s3', region_name=aws_region)
+
 # Define input data models
 class SchoolFeatures(BaseModel):
     """Input features for a school record"""
@@ -210,6 +220,45 @@ class BatchPredictionResponse(BaseModel):
     predictions: List[PredictionResponse]
     high_risk_count: int
     total_schools: int
+    query_execution_id: str
+
+def query_athena(query, database=athena_database):
+    """
+    Execute a query on AWS Athena and return the results as a DataFrame
+    """
+    # Start query execution
+    response = athena_client.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={'Database': database},
+        ResultConfiguration={'OutputLocation': athena_output_location}
+    )
+    
+    query_execution_id = response['QueryExecutionId']
+    
+    # Wait for query to complete
+    while True:
+        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        query_state = query_status['QueryExecution']['Status']['State']
+        
+        if query_state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+            break
+        
+        time.sleep(1)
+    
+    # If query failed, raise exception
+    if query_state != 'SUCCEEDED':
+        error_details = query_status['QueryExecution']['Status'].get('StateChangeReason', 'Unknown error')
+        raise Exception(f"Athena query failed: {error_details}")
+    
+    # Get S3 location of results
+    s3_path = query_status['QueryExecution']['ResultConfiguration']['OutputLocation']
+    bucket, key = s3_path.replace('s3://', '').split('/', 1)
+    
+    # Get results from S3
+    result_object = s3_client.get_object(Bucket=bucket, Key=key)
+    df = pd.read_csv(result_object['Body'])
+    
+    return df, query_execution_id
 
 # API endpoints
 @app.get("/")
@@ -245,15 +294,28 @@ async def predict_single(school: SchoolFeatures, threshold: float = Query(0.3, d
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
-@app.post("/predict/batch", response_model=BatchPredictionResponse)
-async def predict_batch(batch: SchoolBatch, threshold: float = Query(0.3, description="Churn probability threshold for high risk")):
+@app.get("/predict/batch", response_model=BatchPredictionResponse)
+async def predict_batch(threshold: float = Query(0.3, description="Churn probability threshold for high risk")):
     """
     Predict churn probability for a batch of schools
     """
     try:
         # Convert batch to DataFrame
-        schools_data = [school.dict() for school in batch.schools]
-        df = pd.DataFrame(schools_data)
+        # schools_data = [school.dict() for school in batch.schools]
+        # df = pd.DataFrame(schools_data)
+        # Query the view without any filters
+        query = f"SELECT * FROM {athena_view}"
+        
+        # Query Athena
+        df, query_execution_id = query_athena(query)
+        
+        if df.empty:
+            return {
+                "predictions": [],
+                "high_risk_count": 0,
+                "total_schools": 0,
+                "query_execution_id": query_execution_id
+            }
         
         # Make predictions
         results = predictor.predict(df)
@@ -274,7 +336,8 @@ async def predict_batch(batch: SchoolBatch, threshold: float = Query(0.3, descri
         return {
             "predictions": predictions,
             "high_risk_count": high_risk_count,
-            "total_schools": len(predictions)
+            "total_schools": len(predictions),
+            "query_execution_id": query_execution_id
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
