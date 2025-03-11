@@ -9,6 +9,8 @@ services:
       - PORT=8000
       - MODEL_PATH=xgb_native_model.json
       - COLUMNS_PATH=model_columns.json
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
