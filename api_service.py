@@ -47,13 +47,11 @@ athena_output_location = os.environ.get("ATHENA_OUTPUT_LOCATION", "s3://cloud-la
 athena_client = boto3.client('athena', 
                             region_name=aws_region,
                             aws_access_key_id=aws_access_key_id,
-                            aws_secret_access_key=aws_secret_access_key,
-                            aws_session_token=aws_session_token)
+                            aws_secret_access_key=aws_secret_access_key)
 s3_client = boto3.client('s3', 
                         region_name=aws_region,
                         aws_access_key_id=aws_access_key_id,
-                        aws_secret_access_key=aws_secret_access_key,
-                        aws_session_token=aws_session_token)
+                        aws_secret_access_key=aws_secret_access_key)
 
 # Define input data models
 class SchoolFeatures(BaseModel):
