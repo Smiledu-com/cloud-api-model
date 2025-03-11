@@ -37,13 +37,23 @@ predictor = ChurnPredictor(model_path=model_path, columns_path=columns_path)
 
 # AWS Athena configuration
 aws_region = os.environ.get("AWS_REGION", "us-east-1")
+aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
 athena_database = os.environ.get("ATHENA_DATABASE", "dbpredictchurn")
 athena_view = os.environ.get("ATHENA_VIEW", "school_activity_contract_view")
 athena_output_location = os.environ.get("ATHENA_OUTPUT_LOCATION", "s3://cloud-lake-smiledu/Unsaved/")
 
 # Initialize AWS clients
-athena_client = boto3.client('athena', region_name=aws_region)
-s3_client = boto3.client('s3', region_name=aws_region)
+athena_client = boto3.client('athena', 
+                            region_name=aws_region,
+                            aws_access_key_id=aws_access_key_id,
+                            aws_secret_access_key=aws_secret_access_key,
+                            aws_session_token=aws_session_token)
+s3_client = boto3.client('s3', 
+                        region_name=aws_region,
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key,
+                        aws_session_token=aws_session_token)
 
 # Define input data models
 class SchoolFeatures(BaseModel):

@@ -7,6 +7,8 @@ on:
 env:
   DEPLOYMENT_ENV: production
   API_PORT: ${{ vars.API_PORT }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,6 +22,8 @@ jobs:
         run: |
           touch .env
           echo API_PORT=${{env.API_PORT}} >> .env
+          echo AWS_ACCESS_KEY_ID=${{env.AWS_ACCESS_KEY_ID}} >> .env
+          echo AWS_SECRET_ACCESS_KEY=${{env.AWS_SECRET_ACCESS_KEY}} >> .env
 
       - name: Prepare files for archiving
         run: |
